@@ -6,27 +6,30 @@ import os
 import secret
 
 
-class Encryption_Challenge:
+class EncryptionChallenge:
     def __init__(self, BITS, d):
         self.d = d
         self.BITS = BITS
         self.key = secret.key
-        self.coeffs = [self.key] + [bytes_to_long(os.urandom(self.BITS//8)) for _ in range(self.d)]
+        self.coeffs = [self.key]
+        for _ in range(self.d):
+            self.coeffs.append(bytes_to_long(os.urandom(self.BITS // 8)))
 
     def poly(self, x):
-        return sum([self.coeffs[i] * x**i for i in range(self.d+1)])
+        return sum([self.coeffs[i] * x ** i for i in range(self.d + 1)])
 
     def get_key_poly(self, x):
         return {'x': x, 'y': self.poly(x)}
-    
+
     def encrypt_flag(self, m):
         key = sha256(str(self.key).encode()).digest()
         iv = os.urandom(16)
         cipher = AES.new(key, AES.MODE_CBC, iv)
         ct = cipher.encrypt(pad(m, 16))
         return {'iv': iv.hex(), 'ciphertext': ct.hex()}
-    
-class Decryption_Solution: 
+
+
+class DecryptionSolution:
     def __init__(self, key, iv) -> None:
         self.key = key
         self.iv = iv
@@ -38,11 +41,11 @@ class Decryption_Solution:
         cipher = AES.new(key, AES.MODE_CBC, iv)
         return unpad(cipher.decrypt(ciphertext), 16)
 
-if __name__ == '__main__':   
 
-    enc = Encryption_Challenge(256, 30)
-    ciphertext = enc.encrypt_flag(secret.FLAG)
-    print(ciphertext)
-    dec = Decryption_Solution(secret.key, ciphertext['iv'])
-    cleartext = dec.decrypt_flag(ciphertext['ciphertext'])
+if __name__ == '__main__':
+    enc = EncryptionChallenge(256, 30)
+    ciphertextAndVector = enc.encrypt_flag(secret.FLAG)
+    print(ciphertextAndVector['ciphertext'])
+    dec = DecryptionSolution(secret.key, ciphertextAndVector['iv'])
+    cleartext = dec.decrypt_flag(ciphertextAndVector['ciphertext'])
     print(cleartext)
